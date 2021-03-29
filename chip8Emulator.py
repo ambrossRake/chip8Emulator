@@ -10,7 +10,9 @@ import time
 import math
 import logging as log
 from rom import *
+
 log.basicConfig(filename='test.log', level=log.INFO)
+
 logger = log.getLogger()
 handler = log.StreamHandler()
 handler.setLevel(log.INFO)
@@ -32,6 +34,7 @@ logger.addHandler(handler)
 
 
 class Chip8Emulator:
+
     def __init__(self):
         self.memory = []
         self.v = []
@@ -155,12 +158,14 @@ class Chip8Emulator:
 
     def orx(self, x, y):
         self.v[x] = self.v[x] | self.v[y]
+
     def subn(self, x, y):
         if(self.v[y] > self.v[x]):
             self.v[y] -= self.v[x]
             self.v[0xF] = 1
         else:
             self.v[0xF] = 0
+
     def sub(self, x,y):
         if(self.v[x] > self.v[y]):
             logger.info("Subtracting " + str(self.v[y]) + " from " + str(self.v[x]))
@@ -168,48 +173,58 @@ class Chip8Emulator:
             self.v[0xF] = 1
         else:
             self.v[0xF] = 0
+
     def sne(self, v, x):
         if(self.v[v] != x):
             logger.info("Skipping next instruction")
             self.pc += 2
         else:
             logger.info("Ignoring skip")
+
     def se(self, x, y):
         if(self.v[x] == self.v[y]):
             logger.info("Skipping next instruction")
             self.pc += 2
         else:
             logger.info("Ignoring skip")
+
     def loadXDT(self, v):
         logger.info("Placing delay timer value into register v[" + str(v) + "]")
         self.v[v] = self.dT
+
     def loadDT(self, v):
         logger.info("Setting delay timer to " + str(v))
         self.dT = self.v[v]
+
     def loadFX(self, v):
-        #TODO update log message
         logger.info("Setting vI to the address of sprite #" + str(self.v[v]))
         self.i = 0x50 + (self.v[v] * 5)
+
     def loadXI(self, v):
         for i in range(0,v):
             logger.info("Loading value " + str(int(self.memory[self.i+i])) + " into register v" + str(i))
             self.v[i] = int(self.memory[self.i+i])
+
     def jmp(self, x):
         logger.info("Jumping to address: " + str(x))
         self.pc = x
+
     def sex(self, v, x):
         if(self.v[v] == x):
             logger.info("Skipping next instruction")
             self.pc += 2
         else:
             logger.info("Ignoring Skip")
+
     def ret(self):
         logger.info("Returning from sub routine")
         self.pc = self.stack.pop()
         self.sp -= 1
+
     def add(self, v, x):
         logger.info("Adding " + str(x) + " to register v["+ str(v) + "]" )
         self.v[v] += x
+
     def bcd(self, v):
         value = self.v[v]
         logger.info("Storing value " + str(value) + " into memory locations{\n" + str(hex(self.i)) + ", " + str(hex(self.i+1)) + ", " + str(hex(self.i+2)))
@@ -280,6 +295,7 @@ class Chip8Emulator:
 
         out = out + "\n" + "Program Counter: " + str(self.pc) + "\n" + "Stack Pointer: " + str(self.sp) + "\n"
         return out
+        
     def run(self):
         step = 0
         while(self.isRunning):
