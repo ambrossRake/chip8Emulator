@@ -2,7 +2,6 @@
     File name: Chip8Emulator.py
     Author: Isaiah Johnson
     Date created: 3/23/2020
-    Date last modified: 3/23/2020
     Python Version: 3.8
 '''
 
