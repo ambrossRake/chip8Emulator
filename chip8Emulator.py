@@ -128,6 +128,8 @@ class Chip8Emulator:
                 self.orx(opB, opC)
             elif(opD == 0x0002):
                 self.andx(opB, opC)
+            elif(opD == 0x0004):
+                self.addc(opB, opC)
             elif(opD == 0x0005):
                 self.sub(opB, opC)
             elif(opD == 0x0007):
@@ -187,6 +189,12 @@ class Chip8Emulator:
             self.v[0xF] = 1
         else:
             self.v[0xF] = 0
+
+    def add(self, x, y):
+        if(x+y <= 32766):
+            self.v[x] = self.v[x] + self.v[y]
+        else:
+            self.v[0xF] = math.abs(x+y-32766)
 
     def sne(self, v, x):
         if(self.v[v] != x):
