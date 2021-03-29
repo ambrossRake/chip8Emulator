@@ -73,7 +73,7 @@ class Chip8Emulator:
         self.isRunning = True
         self.clockSpeed = 1
         self.debugMode = True
-        self.spriteData = []
+        self.pixels = []
         self.dT = 0x0
         for _ in range(4096):
             self.memory.append(0x0)
@@ -81,7 +81,6 @@ class Chip8Emulator:
             self.v.append(0x0)
         for i in range(len(DEFAULT_FONT)):
             self.memory[0x050+i] = DEFAULT_FONT[i]
-        self.pixels = []
 
         for y in range(Y):
             row = []
@@ -233,7 +232,7 @@ class Chip8Emulator:
         logger.info(self.pixels[y][x])
         return(self.pixels[y][x][1])
     def clr(self):
-        for pixel in self.spriteData:
+        for pixel in self.pixels:
             canvas.delete(pixel[0])
 
     def sprite(self, x, y, n):
