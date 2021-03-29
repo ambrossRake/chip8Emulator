@@ -30,36 +30,6 @@ formatter = log.Formatter("%(levelname)s - %(message)s")
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-SCALE = 8
-X = 64*SCALE
-Y = 32*SCALE
-
-window = tkinter.Tk()
-window.title("Chip8 Emulator")
-window.geometry = ("%dx%d"%(X,Y))
-window.config(bg='#000')
-
-canvas = tkinter.Canvas(window, bg="#000", height = Y, width = X)
-canvas.pack()
-
-
-DEFAULT_FONT = [
-    0xF0, 0x90, 0x90, 0x90, 0xF0, # 0
-    0x20, 0x60, 0x20, 0x20, 0x70, # 1
-    0xF0, 0x10, 0xF0, 0x80, 0xF0, # 2
-    0xF0, 0x10, 0xF0, 0x10, 0xF0, # 3
-    0x90, 0x90, 0xF0, 0x10, 0x10, # 4
-    0xF0, 0x80, 0xF0, 0x10, 0xF0, # 5
-    0xF0, 0x80, 0xF0, 0x90, 0xF0, # 6
-    0xF0, 0x10, 0x20, 0x40, 0x40, # 7
-    0xF0, 0x90, 0xF0, 0x90, 0xF0, # 8
-    0xF0, 0x90, 0xF0, 0x10, 0xF0, # 9
-    0xF0, 0x90, 0xF0, 0x90, 0x90, # A
-    0xE0, 0x90, 0xE0, 0x90, 0xE0, # B
-    0xF0, 0x80, 0x80, 0x80, 0xF0, # C
-    0xE0, 0x90, 0x90, 0x90, 0xE0, # D
-    0xF0, 0x80, 0xF0, 0x80, 0xF0, # E
-    0xF0, 0x80, 0xF0, 0x80, 0x80]  # F
 
 class Chip8Emulator:
     def __init__(self):
@@ -75,17 +45,44 @@ class Chip8Emulator:
         self.debugMode = True
         self.pixels = []
         self.dT = 0x0
+        self.window = tkinter.Tk()
+        self.graphicScale = 8
+        self.displayWidth = 64*self.graphicScale
+        self.displayHeight = 32*self.graphicScale
+        self.font = [
+        0xF0, 0x90, 0x90, 0x90, 0xF0, # 0
+        0x20, 0x60, 0x20, 0x20, 0x70, # 1
+        0xF0, 0x10, 0xF0, 0x80, 0xF0, # 2
+        0xF0, 0x10, 0xF0, 0x10, 0xF0, # 3
+        0x90, 0x90, 0xF0, 0x10, 0x10, # 4
+        0xF0, 0x80, 0xF0, 0x10, 0xF0, # 5
+        0xF0, 0x80, 0xF0, 0x90, 0xF0, # 6
+        0xF0, 0x10, 0x20, 0x40, 0x40, # 7
+        0xF0, 0x90, 0xF0, 0x90, 0xF0, # 8
+        0xF0, 0x90, 0xF0, 0x10, 0xF0, # 9
+        0xF0, 0x90, 0xF0, 0x90, 0x90, # A
+        0xE0, 0x90, 0xE0, 0x90, 0xE0, # B
+        0xF0, 0x80, 0x80, 0x80, 0xF0, # C
+        0xE0, 0x90, 0x90, 0x90, 0xE0, # D
+        0xF0, 0x80, 0xF0, 0x80, 0xF0, # E
+        0xF0, 0x80, 0xF0, 0x80, 0x80]  # F
+
+        self.window.title("Chip8 Emulator")
+        self.window.geometry = ("%dx%d"%(self.displayWidth,self.displayHeight))
+        self.window.config(bg='#000')
+        self.canvas = tkinter.Canvas(self.window, bg="#000", height = self.displayHeight, width = self.displayWidth)
+        self.canvas.pack()
         for _ in range(4096):
             self.memory.append(0x0)
         for _ in range(16):
             self.v.append(0x0)
-        for i in range(len(DEFAULT_FONT)):
-            self.memory[0x050+i] = DEFAULT_FONT[i]
+        for i in range(len(self.font)):
+            self.memory[0x050+i] = self.font[i]
 
-        for y in range(Y):
+        for y in range(self.displayHeight):
             row = []
-            for x in range(X):
-                row.append([canvas.create_rectangle(x*SCALE,y*SCALE,(x+1)*SCALE,(y+1)*SCALE), 0])
+            for x in range(self.displayWidth):
+                row.append([self.canvas.create_rectangle(x*self.graphicScale,y*self.graphicScale,(x+1)*self.graphicScale,(y+1)*self.graphicScale), 0])
             self.pixels.append(row)
 
     def loadROM(self, rom):
@@ -154,6 +151,7 @@ class Chip8Emulator:
 
         logger.info(self.toString())
         self.pc += 2
+        self.window.update()
 
     def orx(self, x, y):
         self.v[x] = self.v[x] | self.v[y]
@@ -254,16 +252,16 @@ class Chip8Emulator:
                 pixel = self.pixels[y+byte_i][x+bit_i]
                 if(bit ^ pixel[1]):
                     logger.debug("Drawing Rectangle")
-                    logger.debug("y*SCALE*byte_i = %d*%d*%d"%(y,SCALE,byte_i))
-                    logger.debug("x*SCALE*(bit_i+1) = %d%d,%d"%(x,SCALE,bit_i))
-                    #pixel = canvas.create_rectangle((x*SCALE)+(bit_i*SCALE), (y*SCALE)+(byte_i*SCALE),((x+1)*SCALE)+(bit_i*SCALE), ((y+1)*SCALE)+(byte_i*SCALE), fill='white')
-                    canvas.itemconfig(pixel[0], fill='white')
+                    logger.debug("y*self.graphicScale*byte_i = %d*%d*%d"%(y,self.graphicScale,byte_i))
+                    logger.debug("x*self.graphicScale*(bit_i+1) = %d%d,%d"%(x,self.graphicScale,bit_i))
+                    #pixel = canvas.create_rectangle((x*self.graphicScale)+(bit_i*self.graphicScale), (y*self.graphicScale)+(byte_i*self.graphicScale),((x+1)*self.graphicScale)+(bit_i*self.graphicScale), ((y+1)*self.graphicScale)+(byte_i*self.graphicScale), fill='white')
+                    self.canvas.itemconfig(pixel[0], fill='white')
                     pixel[1] = 1
-                    #pixel = canvas.create_rectangle((x*SCALE)+(bit_i*SCALE), (y*SCALE)+(byte_i*SCALE),((x+1)*SCALE)+(bit_i*SCALE), ((y+1)*SCALE)+(byte_i*SCALE), fill='white')
+                    #pixel = canvas.create_rectangle((x*self.graphicScale)+(bit_i*self.graphicScale), (y*self.graphicScale)+(byte_i*self.graphicScale),((x+1)*self.graphicScale)+(bit_i*self.graphicScale), ((y+1)*self.graphicScale)+(byte_i*self.graphicScale), fill='white')
                     #self.spriteData.append([pixel, x+bit_i, y+byte_i])
-                    logger.debug("(%d,%d) -> (%d,%d)"%((x+1)*SCALE*(bit_i+1), y*SCALE*(byte_i+1),(x+1)*SCALE*(bit_i+1), (y+1)*SCALE*(byte_i+1)))
+                    logger.debug("(%d,%d) -> (%d,%d)"%((x+1)*self.graphicScale*(bit_i+1), y*self.graphicScale*(byte_i+1),(x+1)*self.graphicScale*(bit_i+1), (y+1)*self.graphicScale*(byte_i+1)))
                 else:
-                    canvas.itemconfig(pixel[0], fill='black')
+                    self.canvas.itemconfig(pixel[0], fill='black')
                     pixel[1] = 0
     def movL(self, v, x):
         logger.info("Moving constant " + str(x) + " into register v["+str(v)+"]")
@@ -282,21 +280,22 @@ class Chip8Emulator:
 
         out = out + "\n" + "Program Counter: " + str(self.pc) + "\n" + "Stack Pointer: " + str(self.sp) + "\n"
         return out
+    def run(self):
+        step = 0
+        while(self.isRunning):
+            if(self.debugMode and step == 0):
+                skip = input("Step#:")
+                if(skip.isnumeric()):
+                    step = int(skip)
+                else:
+                    step = 0
+            else:
+                time.sleep(self.clockSpeed)
+            self.emulateCycle()
+            step -= 1
+            if(step < 0):
+                step = 0
 
 emulator = Chip8Emulator()
 emulator.loadROM(test2)
-step = 0
-while(emulator.isRunning):
-    if(emulator.debugMode and step == 0):
-        skip = input("Step#:")
-        if(skip.isnumeric()):
-            step = int(skip)
-        else:
-            step = 0
-    else:
-        time.sleep(emulator.clockSpeed)
-    emulator.emulateCycle()
-    window.update()
-    step -= 1
-    if(step < 0):
-        step = 0
+emulator.run()
