@@ -8,6 +8,27 @@
 import tkinter
 import time
 import math
+import logging as log
+log.basicConfig(filename='test.log', level=log.INFO)
+logger = log.getLogger()
+handler = log.StreamHandler()
+handler.setLevel(log.INFO)
+formatter = log.Formatter("%(levelname)s - %(message)s")
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+
+handler = log.FileHandler("debug.log","w", encoding=None, delay="true")
+handler.setLevel(log.DEBUG)
+formatter = log.Formatter("%(levelname)s - %(message)s")
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+
+handler = log.FileHandler("error.log","w", encoding=None, delay="true")
+handler.setLevel(log.ERROR)
+formatter = log.Formatter("%(levelname)s - %(message)s")
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+
 SCALE = 8
 X = 64*SCALE
 Y = 32*SCALE
@@ -160,10 +181,10 @@ class Chip8Emulator:
 
         else:
             self.isRunning = False
-            print("OpCode not implemented")
+            logger.error("OpCode implementation for %s not found"%(hex(self.opCode)))
 
 
-        print(self.toString())
+        logger.info(self.toString())
         self.pc += 2
 
     def orx(self, x, y):
@@ -176,55 +197,56 @@ class Chip8Emulator:
             self.v[0xF] = 0
     def sub(self, x,y):
         if(self.v[x] > self.v[y]):
-            print("Subtracting " + str(self.v[y]) + " from " + str(self.v[x]))
+            logger.info("Subtracting " + str(self.v[y]) + " from " + str(self.v[x]))
             self.v[x] -= self.v[y]
             self.v[0xF] = 1
         else:
             self.v[0xF] = 0
     def sne(self, v, x):
         if(self.v[v] != x):
-            print("Skipping next instruction")
+            logger.info("Skipping next instruction")
             self.pc += 2
         else:
-            print("Ignoring skip")
+            logger.info("Ignoring skip")
     def se(self, x, y):
         if(self.v[x] == self.v[y]):
-            print("Skipping next instruction")
+            logger.info("Skipping next instruction")
             self.pc += 2
         else:
-            print("Ignoring skip")
+            logger.info("Ignoring skip")
     def loadXDT(self, v):
-        print("Placing delay timer value into register v[" + str(v) + "]")
+        logger.info("Placing delay timer value into register v[" + str(v) + "]")
         self.v[v] = self.dT
     def loadDT(self, v):
-        print("Setting delay timer to " + str(v))
+        logger.info("Setting delay timer to " + str(v))
         self.dT = self.v[v]
     def loadFX(self, v):
-        print("Fx29")
+        #TODO update log message
+        logger.info("Setting vI to the address of sprite #" + str(self.v[v]))
         self.i = 0x50 + (self.v[v] * 5)
     def loadXI(self, v):
         for i in range(0,v):
-            print("Loading value " + str(int(self.memory[self.i+i])) + " into register v" + str(i))
+            logger.info("Loading value " + str(int(self.memory[self.i+i])) + " into register v" + str(i))
             self.v[i] = int(self.memory[self.i+i])
     def jmp(self, x):
-        print("Jumping to address: " + str(x))
+        logger.info("Jumping to address: " + str(x))
         self.pc = x
     def sex(self, v, x):
         if(self.v[v] == x):
-            print("Skipping next instruction")
+            logger.info("Skipping next instruction")
             self.pc += 2
         else:
-            print("Ignoring Skip")
+            logger.info("Ignoring Skip")
     def ret(self):
-        print("Returning from sub routine")
+        logger.info("Returning from sub routine")
         self.pc = self.stack.pop()
         self.sp -= 1
     def add(self, v, x):
-        print("Adding " + str(x) + " to register v["+ str(v) + "]" )
+        logger.info("Adding " + str(x) + " to register v["+ str(v) + "]" )
         self.v[v] += x
     def bcd(self, v):
         value = self.v[v]
-        print("Storing value " + str(value) + " into memory locations{\n" + str(hex(self.i)) + ", " + str(hex(self.i+1)) + ", " + str(hex(self.i+2)))
+        logger.info("Storing value " + str(value) + " into memory locations{\n" + str(hex(self.i)) + ", " + str(hex(self.i+1)) + ", " + str(hex(self.i+2)))
         ones = value % 10
         tens = (value / 10) % 102
         hundreds = value / 100
@@ -233,13 +255,13 @@ class Chip8Emulator:
         self.memory[self.i+2] = ones
 
     def call(self,n):
-        print("Calling subroutine at address " + str(hex(n)))
+        logger.info("Calling subroutine at address " + str(hex(n)))
         self.sp += 1
         self.stack.append(self.pc)
         self.pc = n
 
     def spriteCheck(self, x,y):
-        print(self.pixels[y][x])
+        logger.info(self.pixels[y][x])
         return(self.pixels[y][x][1])
     def clr(self):
         for pixel in self.spriteData:
@@ -253,34 +275,34 @@ class Chip8Emulator:
 
         if(x>63):
             x=math.floor(x/63)
-        print("Drawing sprite at %d, %d with a height of %d"%(x,y,n))
+        logger.info("Drawing sprite at %d, %d with a height of %d"%(x,y,n))
         for byte_i in range(n):
             byte = [int(x) for x in '{:08b}'.format(self.memory[self.i+byte_i])]
-            print("Reading byte #" + str(byte_i) + ":")
-            print(byte)
+            logger.debug("Reading byte #" + str(byte_i) + ":")
+            logger.debug(byte)
             for bit_i in range(len(byte)):
                 bit = byte[bit_i]
-                print("Bit: " + str(bit))
+                logger.debug("Bit: " + str(bit))
                 pixel = self.pixels[y+byte_i][x+bit_i]
                 if(bit ^ pixel[1]):
-                    print("Drawing Rectangle")
-                    print("y*SCALE*byte_i = %d*%d*%d"%(y,SCALE,byte_i))
-                    print("x*SCALE*(bit_i+1) = %d%d,%d"%(x,SCALE,bit_i))
+                    logger.debug("Drawing Rectangle")
+                    logger.debug("y*SCALE*byte_i = %d*%d*%d"%(y,SCALE,byte_i))
+                    logger.debug("x*SCALE*(bit_i+1) = %d%d,%d"%(x,SCALE,bit_i))
                     #pixel = canvas.create_rectangle((x*SCALE)+(bit_i*SCALE), (y*SCALE)+(byte_i*SCALE),((x+1)*SCALE)+(bit_i*SCALE), ((y+1)*SCALE)+(byte_i*SCALE), fill='white')
                     canvas.itemconfig(pixel[0], fill='white')
                     pixel[1] = 1
                     #pixel = canvas.create_rectangle((x*SCALE)+(bit_i*SCALE), (y*SCALE)+(byte_i*SCALE),((x+1)*SCALE)+(bit_i*SCALE), ((y+1)*SCALE)+(byte_i*SCALE), fill='white')
                     #self.spriteData.append([pixel, x+bit_i, y+byte_i])
-                    print("(%d,%d) -> (%d,%d)"%((x+1)*SCALE*(bit_i+1), y*SCALE*(byte_i+1),(x+1)*SCALE*(bit_i+1), (y+1)*SCALE*(byte_i+1)))
+                    logger.debug("(%d,%d) -> (%d,%d)"%((x+1)*SCALE*(bit_i+1), y*SCALE*(byte_i+1),(x+1)*SCALE*(bit_i+1), (y+1)*SCALE*(byte_i+1)))
                 else:
                     canvas.itemconfig(pixel[0], fill='black')
                     pixel[1] = 0
     def movL(self, v, x):
-        print("Moving constant " + str(x) + " into register v["+str(v)+"]")
+        logger.info("Moving constant " + str(x) + " into register v["+str(v)+"]")
         self.v[v] = x
 
     def loadI(self, x):
-        print("Loading constant " + str(x) + " into index register")
+        logger.info("Loading constant " + str(x) + " into index register")
         self.i = x
 
     def toString(self):
