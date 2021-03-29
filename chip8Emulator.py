@@ -126,8 +126,8 @@ class Chip8Emulator:
                 self.ldxy(opB, opC)
             elif(opD == 0x0001):
                 self.orx(opB, opC)
-        #    elif(opD == 0x0002):
-                #self.andx()
+            elif(opD == 0x0002):
+                self.andx(opB, opC)
             elif(opD == 0x0005):
                 self.sub(opB, opC)
             elif(opD == 0x0007):
@@ -164,7 +164,13 @@ class Chip8Emulator:
     def ldxy(self, x, y):
         logger.info("Loading value from v[%d] into v[%d]"%(y, x))
         self.v[x] = self.v[y]
+
+    def andx(self, x, y):
+        logger.info("v[%d] = v[%d] & v[%d]"%(x,x,y))
+        self.v[x] = self.v[x] & self.v[y]
+
     def orx(self, x, y):
+        logger.info("v[%d] = v[%d] | v[%d]"%(x,x,y))
         self.v[x] = self.v[x] | self.v[y]
 
     def subn(self, x, y):
