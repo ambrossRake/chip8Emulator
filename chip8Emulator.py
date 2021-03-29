@@ -44,7 +44,7 @@ class Chip8Emulator:
         self.sp = 0x0
         self.opCode = 0x0
         self.isRunning = True
-        self.clockSpeed = 1
+        self.clockSpeed = .2
         self.debugMode = True
         self.pixels = []
         self.dT = 0x0
@@ -86,6 +86,7 @@ class Chip8Emulator:
             row = []
             for x in range(self.displayWidth):
                 row.append([self.canvas.create_rectangle(x*self.graphicScale,y*self.graphicScale,(x+1)*self.graphicScale,(y+1)*self.graphicScale), 0])
+            logger.info("Loading pixels [%d/%d]"%(self.displayWidth*y, self.displayWidth*self.displayHeight))
             self.pixels.append(row)
 
     def loadROM(self, rom):
@@ -121,7 +122,9 @@ class Chip8Emulator:
         elif(opA == 0x7000):
             self.add(opB, self.opCode & 0x00FF)
         elif(opA == 0x8000):
-            if(opD == 0x0001):
+            if(opD == 0x0000):
+                self.ldxy(opB, opC)
+            elif(opD == 0x0001):
                 self.orx(opB, opC)
         #    elif(opD == 0x0002):
                 #self.andx()
@@ -129,6 +132,8 @@ class Chip8Emulator:
                 self.sub(opB, opC)
             elif(opD == 0x0007):
                 self.subn(opB, opC)
+        elif(opA == 0x9000):
+            self.snel(opB, opC)
         elif(opA == 0xA000):
             self.loadI(self.opCode&0x0FFF)
         elif(opA == 0xD000):
@@ -156,6 +161,9 @@ class Chip8Emulator:
         self.pc += 2
         self.window.update()
 
+    def ldxy(self, x, y):
+        logger.info("Loading value from v[%d] into v[%d]"%(y, x))
+        self.v[x] = self.v[y]
     def orx(self, x, y):
         self.v[x] = self.v[x] | self.v[y]
 
@@ -286,6 +294,14 @@ class Chip8Emulator:
         logger.info("Loading constant " + str(x) + " into index register")
         self.i = x
 
+    def snel(self, x, y):
+        if(self.v[x] != self.v[y]):
+            logger.info("Skipping next instruction")
+            self.pc += 2
+        else:
+            logger.info("Skip ignored")
+
+
     def toString(self):
         out = "Emulator Info:\n"
         out += "Current OpCode:" + str(hex(self.opCode)) + "\n"
@@ -295,7 +311,7 @@ class Chip8Emulator:
 
         out = out + "\n" + "Program Counter: " + str(self.pc) + "\n" + "Stack Pointer: " + str(self.sp) + "\n"
         return out
-        
+
     def run(self):
         step = 0
         while(self.isRunning):
