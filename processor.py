@@ -43,7 +43,8 @@ class Processor:
         self.sp = 0x0
         self.opCode = 0x0
         self.isRunning = True
-        self.clockSpeed = .2 #TODO: convert to mhz
+        self.hertz = 500
+        self.clockSpeed = 1/self.hertz
         self.debugMode = True
         self.pixels = []
         self.dT = 0x0
