@@ -10,7 +10,7 @@ import time
 import math
 import logging as log
 
-log.basicConfig(filename='test.log', level=log.INFO)
+log.basicConfig(filename='test.log', level=log.DEBUG)
 
 logger = log.getLogger()
 handler = log.StreamHandler()
@@ -72,7 +72,7 @@ class Processor:
         for _ in range(16):
             self.v.append(0x0)
         for i in range(len(self.font)):
-            self.memory[0x050+i] = self.font[i]
+            self.memory[0x50+i] = self.font[i]
 
     def loadROM(self, rom):
         for i in range(len(rom)):
@@ -124,7 +124,7 @@ class Processor:
                 logger.info("Ignoring skip")
         elif(opA == 0x6000):
             const = self.opCode&0x00FF
-            logger.info("Moving constant %d into register v[%d]"%(opB, const))
+            logger.info("Moving constant %d into register v[%d]"%(const, opB))
             self.movL(opB, const)
         elif(opA == 0x7000):
             const = self.opCode%0x00FF
@@ -308,25 +308,23 @@ class Processor:
         self.display.clear()
 
     def sprite(self, x, y, n):
-        x-=7
-        x*=4
-        y-=8
-        y*=2
+        logger.info("Drawing sprite at %d, %d with a height of %d"%(self.v[x],self.v[y],n))
+    #    x-=7
+    #    x*=4
+    #    y-=8
+    #    y*=2
 
-        if(x>63):
-            x=math.floor(x/63)
-        logger.info("Drawing sprite at %d, %d with a height of %d"%(x,y,n))
-        for byte_i in range(n):
-            byte = [int(x) for x in '{:08b}'.format(self.memory[self.i+byte_i])]
-            logger.debug("Reading byte #" + str(byte_i) + ":")
+        for i in range(n):
+            byte = [int(a) for a in '{:08b}'.format(self.memory[self.i+i])]
+            logger.debug("Reading byte #" + str(i) + ":")
             logger.debug(byte)
-            for bit_i in range(len(byte)):
-                bit = byte[bit_i]
+            for j in range(len(byte)):
+                bit = byte[j]
                 logger.debug("Bit: " + str(bit))
-                row = x+bit_i
-                col = y+byte_i
-                pixel = self.display.get(col, row)
-                self.display.set(col, row, bit^pixel)
+                row = self.v[y]+i
+                col = self.v[x]+j
+                pixel = self.display.get(row, col)
+                self.display.set(row, col, bit^pixel)
     def movL(self, v, x):
         self.v[v] = x
 
