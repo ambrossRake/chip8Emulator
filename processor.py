@@ -268,7 +268,8 @@ class Processor:
             self.v[i] = int(self.memory[self.i+i])
 
     def jmp(self, x):
-        self.pc = x
+        if(x < len(self.memory) and x > 0):
+            self.pc = x
 
     def sex(self, v, x):
         if(self.v[v] == x):
