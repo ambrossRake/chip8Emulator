@@ -11,11 +11,11 @@ import math
 import logging as log
 from rom import *
 
-log.basicConfig(filename='test.log', level=log.INFO)
+log.basicConfig(filename='test.log', level=log.DEBUG)
 
 logger = log.getLogger()
 handler = log.StreamHandler()
-handler.setLevel(log.INFO)
+handler.setLevel(log.DEBUG)
 formatter = log.Formatter("%(levelname)s - %(message)s")
 handler.setFormatter(formatter)
 logger.addHandler(handler)
@@ -86,8 +86,8 @@ class Chip8Emulator:
             row = []
             for x in range(self.displayWidth):
                 row.append([self.canvas.create_rectangle(x*self.graphicScale,y*self.graphicScale,(x+1)*self.graphicScale,(y+1)*self.graphicScale), 0])
-            logger.info("Loading pixels [%d/%d]"%(self.displayWidth*y, self.displayWidth*self.displayHeight))
             self.pixels.append(row)
+
 
     def loadROM(self, rom):
         for i in range(len(rom)):
@@ -104,42 +104,81 @@ class Chip8Emulator:
         opD = self.opCode & 0x000F
         if(opA == 0x0000):
             if(self.opCode & 0x00FF == 0x00EE):
+                logger.info("Returning from sub routine")
                 self.ret()
             elif(opC == 0xE):
+                logger.info("Clearing screen")
                 self.clr()
         elif(opA == 0x1000):
+            logger.info("Jumping to address: " + str(x))
             self.jmp(self.opCode & 0x0FFF)
         elif(opA == 0x2000):
+            logger.info("Calling subroutine at address " + str(hex(n)))
             self.call(self.opCode & 0x0FFF)
         elif(opA == 0x3000):
-            self.sex(opB, self.opCode&0x00FF)
+            skipped = self.sex(opB, self.opCode&0x00FF)
+            if(skipped):
+                logger.info("Skipping next instruction")
+            else:
+                logger.info("Ignoring Skip")
         elif(opA == 0x4000):
-            self.sne(opB, self.opCode&0x00FF)
+            logger.info("Checking if %d != %d"%(opB,opC))
+            skipped = self.sne(opB, self.opCode&0x00FF)
+            if(skipped):
+                logger.info("Skipping next instruction")
+            else:
+                logger.info("Ignoring skip")
         elif(opA == 0x5000):
-            self.se(opB, opC)
+            logger.info("Checking if %d == %d"%(opB,opC))
+            skipped = self.se(opB, opC)
+            if(skipped):
+                logger.info("Skipping next instruction")
+            else:
+                logger.info("Ignoring skip")
         elif(opA == 0x6000):
-            self.movL(opB, self.opCode&0x00FF)
+            const = self.opCode&0x00FF
+            logger.info("Moving constant %d into register v[%d]"%(opB, const))
+            self.movL(opB, const)
         elif(opA == 0x7000):
-            self.add(opB, self.opCode & 0x00FF)
+            const = self.opCode%0x00FF
+            logger.info("Adding constant %d to v[%d]"%(const, opB))
+            self.add(opB, const)
         elif(opA == 0x8000):
             if(opD == 0x0000):
+                logger.info("Loading value from v[%d] into v[%d]"%(opC, opB))
                 self.ldxy(opB, opC)
             elif(opD == 0x0001):
+                logger.info("v[%d] = v[%d] | v[%d]"%(x,x,y))
                 self.orx(opB, opC)
             elif(opD == 0x0002):
+                logger.info("v[%d] = v[%d] & v[%d]"%(x,x,y))
                 self.andx(opB, opC)
             elif(opD == 0x0004):
+                logger.info("Adding registers v[%d] and v[%d] into v[%]"%(opB, const, opB))
                 self.addc(opB, opC)
-            elif(opD == 0x0005):
-                self.sub(opB, opC)
+            elif(opD == 0x0005
+                canSub = self.sub(opB, opC)
+                if(canSub):
+                    logger.info("Subtracting v[%d] from v[%d]"%(opC, opB))
             elif(opD == 0x0007):
+                #TODO: Add log
                 self.subn(opB, opC)
+
         elif(opA == 0x9000):
-            self.snel(opB, opC)
+            skipped = self.snel(opB, opC)
+            if(skipped):
+                logger.info("Skipping next instruction")
+            else:
+                logger.info("Skip ignored")
+
         elif(opA == 0xA000):
-            self.loadI(self.opCode&0x0FFF)
+            const = self.opCode&0x0FFF
+            logger.info("Loading constant %d into index register"%(const))
+            self.loadI(const)
+
         elif(opA == 0xD000):
             self.sprite(opB, opC, opD)
+
         elif(opA == 0xF000):
             opCD = self.opCode & 0x00FF
             if(opCD == 0x0007):
@@ -164,15 +203,12 @@ class Chip8Emulator:
         self.window.update()
 
     def ldxy(self, x, y):
-        logger.info("Loading value from v[%d] into v[%d]"%(y, x))
         self.v[x] = self.v[y]
 
     def andx(self, x, y):
-        logger.info("v[%d] = v[%d] & v[%d]"%(x,x,y))
         self.v[x] = self.v[x] & self.v[y]
 
     def orx(self, x, y):
-        logger.info("v[%d] = v[%d] | v[%d]"%(x,x,y))
         self.v[x] = self.v[x] | self.v[y]
 
     def subn(self, x, y):
@@ -184,32 +220,49 @@ class Chip8Emulator:
 
     def sub(self, x,y):
         if(self.v[x] > self.v[y]):
-            logger.info("Subtracting " + str(self.v[y]) + " from " + str(self.v[x]))
             self.v[x] -= self.v[y]
             self.v[0xF] = 1
+            return True
         else:
             self.v[0xF] = 0
+            return False
 
-    def add(self, x, y):
-        if(x+y <= 32766):
-            self.v[x] = self.v[x] + self.v[y]
+    def add(self, v, const):
+        sum = self.v[v]+const
+        if(sum < 0xFF):
+            self.v[v] = sum
         else:
-            self.v[0xF] = math.abs(x+y-32766)
+            self.v[v] = 0xFF
+
+    def addc(self, x, y):
+        sum = self.v[x]+self.v[y]
+        if(sum < 0xFF):
+            self.v[x] = sum
+        elif(sum > 0xFF):
+            carry = 0xFF-(self.v[x]+self.v[y])
+            if(carry >= 0xFF):
+                self.v[0xF] = 0xFF
+            else:
+                self.v[0xF] = carry
+            return carry
+        else:
+            self.v[x] = 0xFF
+
+        return 0
 
     def sne(self, v, x):
         if(self.v[v] != x):
-            logger.info("Skipping next instruction")
             self.pc += 2
+            return True
         else:
-            logger.info("Ignoring skip")
+            return False
 
     def se(self, x, y):
         if(self.v[x] == self.v[y]):
-            logger.info("Skipping next instruction")
             self.pc += 2
+            return True
         else:
-            logger.info("Ignoring skip")
-
+            return False
     def loadXDT(self, v):
         logger.info("Placing delay timer value into register v[" + str(v) + "]")
         self.v[v] = self.dT
@@ -228,18 +281,16 @@ class Chip8Emulator:
             self.v[i] = int(self.memory[self.i+i])
 
     def jmp(self, x):
-        logger.info("Jumping to address: " + str(x))
         self.pc = x
 
     def sex(self, v, x):
         if(self.v[v] == x):
-            logger.info("Skipping next instruction")
             self.pc += 2
+            return True
         else:
-            logger.info("Ignoring Skip")
+            retun False
 
     def ret(self):
-        logger.info("Returning from sub routine")
         self.pc = self.stack.pop()
         self.sp -= 1
 
@@ -258,7 +309,6 @@ class Chip8Emulator:
         self.memory[self.i+2] = ones
 
     def call(self,n):
-        logger.info("Calling subroutine at address " + str(hex(n)))
         self.sp += 1
         self.stack.append(self.pc)
         self.pc = n
@@ -301,20 +351,17 @@ class Chip8Emulator:
                     self.canvas.itemconfig(pixel[0], fill='black')
                     pixel[1] = 0
     def movL(self, v, x):
-        logger.info("Moving constant " + str(x) + " into register v["+str(v)+"]")
         self.v[v] = x
 
     def loadI(self, x):
-        logger.info("Loading constant " + str(x) + " into index register")
         self.i = x
 
     def snel(self, x, y):
         if(self.v[x] != self.v[y]):
-            logger.info("Skipping next instruction")
             self.pc += 2
+            retun True
         else:
-            logger.info("Skip ignored")
-
+            return False
 
     def toString(self):
         out = "Emulator Info:\n"
