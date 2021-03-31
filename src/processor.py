@@ -10,7 +10,7 @@ import time
 import math
 import logging as log
 
-log.basicConfig(filename='test.log', level=log.DEBUG)
+log.basicConfig(filename='../Emulator/log/test.log', level=log.DEBUG)
 
 logger = log.getLogger()
 handler = log.StreamHandler()
@@ -19,13 +19,13 @@ formatter = log.Formatter("%(levelname)s - %(message)s")
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-handler = log.FileHandler("debug.log","w", encoding=None, delay="true")
+handler = log.FileHandler("../Emulator/log/debug.log","w", encoding=None, delay="true")
 handler.setLevel(log.DEBUG)
 formatter = log.Formatter("%(levelname)s - %(message)s")
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-handler = log.FileHandler("error.log","w", encoding=None, delay="true")
+handler = log.FileHandler("../Emulator/log/error.log","w", encoding=None, delay="true")
 handler.setLevel(log.ERROR)
 formatter = log.Formatter("%(levelname)s - %(message)s")
 handler.setFormatter(formatter)
@@ -301,18 +301,11 @@ class Processor:
         self.stack.append(self.pc)
         self.pc = addr
 
-    def spriteCheck(self, x,y):
-        logger.info(self.pixels[y][x])
-        return(self.pixels[y][x][1])
     def clr(self):
         self.display.clear()
 
     def sprite(self, x, y, n):
         logger.info("Drawing sprite at %d, %d with a height of %d"%(self.v[x],self.v[y],n))
-    #    x-=7
-    #    x*=4
-    #    y-=8
-    #    y*=2
 
         for i in range(n):
             byte = [int(a) for a in '{:08b}'.format(self.memory[self.i+i])]
@@ -323,6 +316,13 @@ class Processor:
                 logger.debug("Bit: " + str(bit))
                 row = self.v[y]+i
                 col = self.v[x]+j
+                if(row > 64):
+                    row -= 64
+                    print(row)
+                if(col > 32):
+                    col -= 32
+                    print(col)
+
                 pixel = self.display.get(row, col)
                 self.display.set(row, col, bit^pixel)
     def movL(self, v, x):
