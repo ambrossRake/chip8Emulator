@@ -48,6 +48,7 @@ class Processor:
         self.debugMode = True
         self.pixels = []
         self.dT = 0x0
+        self.sT = 0x0
         self.display = display
         self.font = [
         0xF0, 0x90, 0x90, 0x90, 0xF0, # 0
@@ -187,6 +188,14 @@ class Processor:
 
         logger.info(self.toString())
         self.pc += 2
+
+        if((self.pc-0x200) % 60 == 0):
+            if(self.dT > 0):
+                self.dT -= 1
+            if(self.sT > 0):
+                logger.info("BEEP")
+                self.sT -= 1
+            
         self.display.update()
 
     def ldxy(self, x, y):
@@ -316,15 +325,13 @@ class Processor:
                 logger.debug("Bit: " + str(bit))
                 row = self.v[y]+i
                 col = self.v[x]+j
-                if(row > 64):
-                    row -= 64
-                    print(row)
-                if(col > 32):
-                    col -= 32
-                    print(col)
+                if(row > 32):
+                    row %= 32
+                if(col > 64):
+                    col %= 64
 
-                pixel = self.display.get(row, col)
-                self.display.set(row, col, bit^pixel)
+                pixel = self.display.get(row, col-1)
+                self.display.set(row, col-1, bit^pixel)
     def movL(self, v, x):
         self.v[v] = x
 
