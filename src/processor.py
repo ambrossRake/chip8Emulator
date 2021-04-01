@@ -128,7 +128,7 @@ class Processor:
             logger.info("Moving constant %d into register v[%d]"%(const, opB))
             self.movL(opB, const)
         elif(opA == 0x7000):
-            const = self.opCode%0x00FF
+            const = self.opCode&0x00FF
             logger.info("Adding constant %d to v[%d]"%(const, opB))
             self.add(opB, const)
         elif(opA == 0x8000):
@@ -195,7 +195,7 @@ class Processor:
             if(self.sT > 0):
                 logger.info("BEEP")
                 self.sT -= 1
-            
+
         self.display.update()
 
     def ldxy(self, x, y):
@@ -225,10 +225,11 @@ class Processor:
 
     def add(self, v, const):
         sum = self.v[v]+const
+        print("SUM: %d"%(sum))
         if(sum < 0xFF):
             self.v[v] = sum
         else:
-            self.v[v] = 0xFF
+            self.v[v] = sum & 0xFF 
 
     def addc(self, x, y):
         sum = self.v[x]+self.v[y]
@@ -290,10 +291,6 @@ class Processor:
     def ret(self):
         self.pc = self.stack.pop()
         self.sp -= 1
-
-    def add(self, v, x):
-        logger.info("Adding " + str(x) + " to register v["+ str(v) + "]" )
-        self.v[v] += x
 
     def bcd(self, v):
         value = self.v[v]
