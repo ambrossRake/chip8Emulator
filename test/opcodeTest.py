@@ -27,3 +27,12 @@ class TestOpCodes(unittest.TestCase):
         prev = cpu.pc
         cpu.jmp(addr)
         self.assertEqual(cpu.pc, prev)
+
+    def testFX33ValidStore(self):
+        num = 111
+        cpu.v[0] = num
+        cpu.bcd(0)
+        x0 = cpu.memory[cpu.i]
+        x1 = cpu.memory[cpu.i+1]
+        x2 = cpu.memory[cpu.i+2]
+        self.assertEqual(x0*100 + x1*10 + x2, num)
