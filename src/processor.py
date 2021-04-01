@@ -136,10 +136,10 @@ class Processor:
                 logger.info("Loading value from v[%d] into v[%d]"%(opC, opB))
                 self.ldxy(opB, opC)
             elif(opD == 0x0001):
-                logger.info("v[%d] = v[%d] | v[%d]"%(x,x,y))
+                logger.info("v[%d] = v[%d] | v[%d]"%(opB,opB,opC))
                 self.orx(opB, opC)
             elif(opD == 0x0002):
-                logger.info("v[%d] = v[%d] & v[%d]"%(x,x,y))
+                logger.info("v[%d] = v[%d] & v[%d]"%(opB,opB,opC))
                 self.andx(opB, opC)
             elif(opD == 0x0004):
                 logger.info("Adding registers v[%d] and v[%d] into v[%]"%(opB, const, opB))
@@ -229,7 +229,7 @@ class Processor:
         if(sum < 0xFF):
             self.v[v] = sum
         else:
-            self.v[v] = sum & 0xFF 
+            self.v[v] = sum & 0xFF
 
     def addc(self, x, y):
         sum = self.v[x]+self.v[y]
