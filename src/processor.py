@@ -149,12 +149,16 @@ class Processor:
                 logger.info("Adding registers v[%d] and v[%d] into v[%d]"%(opB, opC, opB))
                 self.addc(opB, opC)
             elif(opD == 0x0005):
-                if(self.sub(opB, opC)):
-                    logger.info("Subtracting v[%d] from v[%d]"%(opC, opB))
+                logger.info("Subtracting v[%d] from v[%d]"%(opC, opB))
+                self.sub(opB, opC)
+            elif(opD == 0x0006):
+                logger.info("")
+                self.shr(opB, opC)
             elif(opD == 0x0007):
                 #TODO: Add log
                 self.subn(opB, opC)
-
+            elif(opD == 0x000E):
+                self.shl(opB, opC)
         elif(opA == 0x9000):
             skipped = self.snel(opB, opC)
             if(skipped):
@@ -174,13 +178,14 @@ class Processor:
             opCD = self.opCode & 0x00FF
             if(opCD == 0x0007):
                 self.loadXDT(opB)
-            if(opCD == 0x0015):
+            elif(opCD == 0x0015):
                 self.loadDT(opB)
-
-            if(opCD == 0x0029):
+            elif(opCD == 0x0029):
                 self.loadFX(opB)
             elif(opCD == 0x0033):
                 self.bcd(opB)
+            elif(opCD == 0x0055):
+                self.load0X(opB)
             elif(opCD == 0x0065):
                 self.loadXI(opB)
 
@@ -204,6 +209,10 @@ class Processor:
     def ldxy(self, x, y):
         self.v[x] = self.v[y]
 
+    def load0X(self, x):
+        for i in range(x):
+            self.memory[self.i+(i*8)] = self.v[x]
+
     def andx(self, x, y):
         self.v[x] = self.v[x] & self.v[y]
 
@@ -212,6 +221,14 @@ class Processor:
 
     def xor(self, x, y):
         self.v[x] = self.v[x] ^ self.v[y]
+
+    def shr(self, x, y):
+        self.v[0xF] = self.v[x] & 0b1
+        self.v[x] = math.floor(self.v[x]/2)
+
+    def shl(self, x, y):
+        self.v[0xF] = self.v[x] >> 7
+        self.v[x] *= 2
     def subn(self, x, y):
         if(self.v[y] > self.v[x]):
             self.v[y] -= self.v[x]
@@ -273,10 +290,10 @@ class Processor:
         logger.info("Setting vI to the address of sprite #" + str(self.v[v]))
         self.i = 0x50 + (self.v[v] * 5)
 
-    def loadXI(self, v):
-        for i in range(0,v):
+    def loadXI(self, x):
+        for i in range(x):
             logger.info("Loading value " + str(int(self.memory[self.i+i])) + " into register v" + str(i))
-            self.v[i] = int(self.memory[self.i+i])
+            self.v[i] = self.memory[self.i+(i*8)]
 
     def jmp(self, x):
         if(x < len(self.memory) and x > 0):
@@ -297,11 +314,11 @@ class Processor:
         value = self.v[v]
         logger.info("Storing value " + str(value) + " into memory locations{\n" + str(hex(self.i)) + ", " + str(hex(self.i+1)) + ", " + str(hex(self.i+2)))
         ones = value % 10
-        tens = (value / 10) % 102
+        tens = (value / 10) % 10
         hundreds = value / 100
-        self.memory[self.i] = hundreds
-        self.memory[self.i+1] = tens
-        self.memory[self.i+2] = ones
+        self.memory[self.i] = math.floor(hundreds)
+        self.memory[self.i+1] = math.floor(tens)
+        self.memory[self.i+2] = math.floor(ones)
 
     def call(self, addr):
         self.sp += 1
