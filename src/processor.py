@@ -141,8 +141,11 @@ class Processor:
             elif(opD == 0x0002):
                 logger.info("v[%d] = v[%d] & v[%d]"%(opB,opB,opC))
                 self.andx(opB, opC)
+            elif(opD == 0x0003):
+                logger.info("v[%d] = v[%d] XOR v[%d]"%(opB, opB, opC))
+                self.xor(opB, opC)
             elif(opD == 0x0004):
-                logger.info("Adding registers v[%d] and v[%d] into v[%]"%(opB, const, opB))
+                logger.info("Adding registers v[%d] and v[%d] into v[%d]"%(opB, opC, opB))
                 self.addc(opB, opC)
             elif(opD == 0x0005):
                 canSub = self.sub(opB, opC)
@@ -207,6 +210,8 @@ class Processor:
     def orx(self, x, y):
         self.v[x] = self.v[x] | self.v[y]
 
+    def xor(self, x, y):
+        self.v[x] = self.v[x] ^ self.v[y]
     def subn(self, x, y):
         if(self.v[y] > self.v[x]):
             self.v[y] -= self.v[x]
@@ -235,17 +240,12 @@ class Processor:
         sum = self.v[x]+self.v[y]
         if(sum < 0xFF):
             self.v[x] = sum
-        elif(sum > 0xFF):
-            carry = 0xFF-(self.v[x]+self.v[y])
-            if(carry >= 0xFF):
-                self.v[0xF] = 0xFF
-            else:
-                self.v[0xF] = carry
-            return carry
+            self.v[0xF] = 0
         else:
-            self.v[x] = 0xFF
+            self.v[x] = sum & 0xFF
+            self.v[0xF] = 1
 
-        return 0
+        return self.v[0xF]
 
     def sne(self, v, x):
         if(self.v[v] != x):
