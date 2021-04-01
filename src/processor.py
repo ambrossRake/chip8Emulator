@@ -110,8 +110,9 @@ class Processor:
             else:
                 logger.info("Ignoring Skip")
         elif(opA == 0x4000):
-            logger.info("Checking if %d != %d"%(opB,opC))
-            skipped = self.sne(opB, self.opCode&0x00FF)
+            const = self.opCode&0x00FF
+            logger.info("Checking if v[%d] != %d"%(opB,const))
+            skipped = self.sne(opB, const)
             if(skipped):
                 logger.info("Skipping next instruction")
             else:
@@ -148,8 +149,7 @@ class Processor:
                 logger.info("Adding registers v[%d] and v[%d] into v[%d]"%(opB, opC, opB))
                 self.addc(opB, opC)
             elif(opD == 0x0005):
-                canSub = self.sub(opB, opC)
-                if(canSub):
+                if(self.sub(opB, opC)):
                     logger.info("Subtracting v[%d] from v[%d]"%(opC, opB))
             elif(opD == 0x0007):
                 #TODO: Add log
@@ -225,6 +225,7 @@ class Processor:
             self.v[0xF] = 1
             return True
         else:
+            self.v[x] = 0xFF + (self.v[x]-self.v[y]) + 1
             self.v[0xF] = 0
             return False
 
