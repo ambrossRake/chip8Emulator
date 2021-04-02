@@ -75,7 +75,26 @@ class Processor:
         for i in range(len(self.font)):
             self.memory[0x50+i] = self.font[i]
 
+    def reset(self):
+        self.memory = []
+        self.v = []
+        self.i = 0x0
+        self.pc = 0x200
+        self.stack = []
+        self.sp = 0x0
+        self.opCode = 0x0
+        self.dT = 0x0
+        self.sT = 0x0
+
+        for _ in range(4096):
+            self.memory.append(0x0)
+        for _ in range(16):
+            self.v.append(0x0)
+        for i in range(len(self.font)):
+            self.memory[0x50+i] = self.font[i]
+
     def loadROM(self, rom):
+        logger.info("Reading ROM into memory")
         for i in range(len(rom)):
             self.memory[self.pc+i] = rom[i]
 
@@ -345,8 +364,8 @@ class Processor:
                 if(col > 64):
                     col %= 64
 
-                pixel = self.display.get(row, col-1)
-                self.display.set(row, col-1, bit^pixel)
+                pixel = self.display.get(row, col)
+                self.display.set(row, col, bit^pixel)
     def movL(self, v, x):
         self.v[v] = x
 
