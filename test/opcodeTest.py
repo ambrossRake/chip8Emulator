@@ -47,6 +47,21 @@ class TestOpCodes(unittest.TestCase):
         cpu.shr(0,0)
         self.assertEqual(cpu.v[0], num//2)
 
+    def testFX55Store(self):
+        for i in range(0xF):
+            cpu.v[i] = 0xF8
+
+        cpu.load0X(0xE)
+        self.assertEqual(cpu.v[0:0xF], cpu.memory[cpu.i:cpu.i+0xF])
+
+    def testFX65Load(self):
+        for i in range(0xF):
+            cpu.v[i] = 0xF8
+        cpu.load0X(0xE)
+
+        cpu.loadXI(0xE)
+        self.assertEqual(cpu.v[0:0xF], cpu.memory[cpu.i:cpu.i+0xF])
+
     def testFX33ValidStore(self):
         num = 111
         cpu.v[0] = num
