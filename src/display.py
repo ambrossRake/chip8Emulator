@@ -12,11 +12,11 @@ class Display:
     def __init__(self):
         self.pixels = []
         self.window = tkinter.Tk()
-        self.scale = 8
+        self.scale = 16
         self.width = 64*self.scale
         self.height = 32*self.scale
-        self.foregroundColor = '#000'
-        self.backgroundColor = '#fff'
+        self.foregroundColor = '#183A37'
+        self.backgroundColor = '#04151F'
         self.window.geometry = ("%dx%d"%(self.width,self.height))
         self.window.config(bg=self.backgroundColor)
         self.canvas = tkinter.Canvas(self.window, bg=self.backgroundColor, height = self.height, width = self.width)
@@ -24,9 +24,8 @@ class Display:
         for y in range(self.height):
             row = []
             for x in range(self.width):
-                row.append([self.canvas.create_rectangle(x*self.scale,y*self.scale,(x+1)*self.scale,(y+1)*self.scale), 0])
+                row.append([self.canvas.create_rectangle(x*self.scale,y*self.scale,(x+1)*self.scale,(y+1)*self.scale, width=1, outline='#0f2422'), 0])
             self.pixels.append(row)
-
     def setTitle(self, title):
         self.window.title(title)
     def clear(self):
