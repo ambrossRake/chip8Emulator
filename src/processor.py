@@ -200,12 +200,14 @@ class Processor:
             elif(opCD == 0x0015):
                 self.loadDT(opB)
             elif(opCD == 0x0029):
+                logger.info("Setting vI to the address of sprite #" + str(self.v[v]))
                 self.loadFX(opB)
             elif(opCD == 0x0033):
                 self.bcd(opB)
             elif(opCD == 0x0055):
                 self.load0X(opB)
             elif(opCD == 0x0065):
+                logger.info("Reading register v[0] through v[%d] from memory location %s"%(opB, hex(self.i)))
                 self.loadXI(opB)
 
         else:
@@ -229,8 +231,8 @@ class Processor:
         self.v[x] = self.v[y]
 
     def load0X(self, x):
-        for i in range(x):
-            self.memory[self.i+(i*8)] = self.v[x]
+        for i in range(x+1):
+            self.memory[self.i+i] = self.v[x]
 
     def andx(self, x, y):
         self.v[x] = self.v[x] & self.v[y]
@@ -306,13 +308,11 @@ class Processor:
         self.dT = self.v[v]
 
     def loadFX(self, v):
-        logger.info("Setting vI to the address of sprite #" + str(self.v[v]))
         self.i = 0x50 + (self.v[v] * 5)
 
     def loadXI(self, x):
-        for i in range(x):
-            logger.info("Loading value " + str(int(self.memory[self.i+i])) + " into register v" + str(i))
-            self.v[i] = self.memory[self.i+(i*8)]
+        for i in range(x+1):
+            self.v[i] = self.memory[self.i+i]
 
     def jmp(self, x):
         if(x < len(self.memory) and x > 0):
