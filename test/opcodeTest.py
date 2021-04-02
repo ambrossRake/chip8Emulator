@@ -1,15 +1,16 @@
 import unittest
-from processor import *
+import src.processor as p
 
-cpu = Processor(None)
-
+cpu = p.Processor(None)
 class TestOpCodes(unittest.TestCase):
+
+    def setUp(self):
+        cpu.reset()
 
     def test1NNNValidAddr(self):
         addr = 0x10
         cpu.jmp(addr)
         self.assertEqual(addr, cpu.pc)
-
 
     def test1NNNMaxAddr(self):
         addr = 0xFFF
@@ -27,6 +28,24 @@ class TestOpCodes(unittest.TestCase):
         prev = cpu.pc
         cpu.jmp(addr)
         self.assertEqual(cpu.pc, prev)
+
+    def test8XY6VFSetOn(self):
+        num = 0b10101011
+        cpu.v[0] = num
+        cpu.shr(0,0)
+        self.assertEqual(cpu.v[0xF], 1)
+
+    def test8XY6VFSetOff(self):
+        num = 0b10101010
+        cpu.v[0] = num
+        cpu.shr(0,0)
+        self.assertEqual(cpu.v[0xF], 0)
+
+    def test8XY6VXDivideByTwo(self):
+        num = 0b10101011
+        cpu.v[0] = num
+        cpu.shr(0,0)
+        self.assertEqual(cpu.v[0], num//2)
 
     def testFX33ValidStore(self):
         num = 111
