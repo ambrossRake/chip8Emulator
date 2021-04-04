@@ -21,7 +21,7 @@ class Chip8Emulator:
         self.__isRunning = False
         self.__debugMode = True
         #self.__keyboard == keyboard.Keyboard()
-        self.display.setTitle(self.__title)
+        self.__display.setTitle(self.__title)
 
     def run(self, rom):
         self.__processor.loadROM(rom)
@@ -35,11 +35,11 @@ class Chip8Emulator:
                 else:
                     step = 0
             else:
-                time.sleep(self.processor.clockSpeed)
-            self.processor.emulateCycle()
+                time.sleep(self.__processor.getClockSpeed())
+            self.__processor.emulateCycle()
             step -= 1
             if(step < 0):
                 step = 0
 
 emulator = Chip8Emulator()
-emulator.run(test2)
+emulator.run(rom.test2)
