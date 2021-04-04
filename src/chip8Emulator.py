@@ -8,26 +8,27 @@
 import tkinter
 import time
 import math
-from processor import *
-from display import *
-from rom import *
+import processor
+import display
+import rom
 
 class Chip8Emulator:
 
     def __init__(self):
-        self.title = "Chip-8 Emulator"
-        self.display = Display()
-        self.processor = Processor(self.display)
-        self.isRunning = False
-        self.debugMode = True
-        self.display.setTitle(self.title)
+        self.__title = "Chip-8 Emulator"
+        self.__display = display.Display()
+        self.__processor = processor.Processor(self.__display)
+        self.__isRunning = False
+        self.__debugMode = True
+        #self.__keyboard == keyboard.Keyboard()
+        self.display.setTitle(self.__title)
 
     def run(self, rom):
-        self.processor.loadROM(rom)
-        self.isRunning = True
+        self.__processor.loadROM(rom)
+        self.__isRunning = True
         step = 0
-        while(self.isRunning):
-            if(self.debugMode and step == 0):
+        while(self.__isRunning):
+            if(self.__debugMode and step == 0):
                 skip = input("Step#:")
                 if(skip.isnumeric()):
                     step = int(skip)
