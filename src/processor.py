@@ -31,26 +31,25 @@ formatter = log.Formatter("%(levelname)s - %(message)s")
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-
 class Processor:
 
     def __init__(self, display):
-        self.memory = []
-        self.v = []
-        self.i = 0x0
-        self.pc = 0x200
-        self.stack = []
-        self.sp = 0x0
-        self.opCode = 0x0
-        self.isRunning = True
-        self.hertz = 500
-        self.clockSpeed = 1/self.hertz
-        self.debugMode = True
-        self.pixels = []
-        self.dT = 0x0
-        self.sT = 0x0
-        self.display = display
-        self.font = [
+        self.__memory = []
+        self.__v = []
+        self.__i = 0x0
+        self.__pc = 0x200
+        self.__stack = []
+        self.__sp = 0x0
+        self.__opCode = 0x0
+        self.__isRunning = True
+        self.__hertz = 500
+        self.__clockSpeed = 1/self.__hertz
+        self.__debugMode = True
+        self.__pixels = []
+        self.__dT = 0x0
+        self.__sT = 0x0
+        self.__display = display
+        self.__font = [
         0xF0, 0x90, 0x90, 0x90, 0xF0, # 0
         0x20, 0x60, 0x20, 0x20, 0x70, # 1
         0xF0, 0x10, 0xF0, 0x80, 0xF0, # 2
@@ -69,321 +68,339 @@ class Processor:
         0xF0, 0x80, 0xF0, 0x80, 0x80]  # F
 
         for _ in range(4096):
-            self.memory.append(0x0)
+            self.__memory.append(0x0)
         for _ in range(16):
-            self.v.append(0x0)
-        for i in range(len(self.font)):
-            self.memory[0x50+i] = self.font[i]
+            self.__v.append(0x0)
+        for i in range(len(self.__font)):
+            self.__memory[0x50+i] = self.__font[i]
 
     def reset(self):
-        self.memory = []
-        self.v = []
-        self.i = 0x0
-        self.pc = 0x200
-        self.stack = []
-        self.sp = 0x0
-        self.opCode = 0x0
-        self.dT = 0x0
-        self.sT = 0x0
+        self.__memory = []
+        self.__v = []
+        self.__i = 0x0
+        self.__pc = 0x200
+        self.__stack = []
+        self.__sp = 0x0
+        self.__opCode = 0x0
+        self.__dT = 0x0
+        self.__sT = 0x0
 
         for _ in range(4096):
-            self.memory.append(0x0)
+            self.__memory.append(0x0)
         for _ in range(16):
-            self.v.append(0x0)
-        for i in range(len(self.font)):
-            self.memory[0x50+i] = self.font[i]
+            self.__v.append(0x0)
+        for i in range(len(self.__font)):
+            self.__memory[0x50+i] = self.__font[i]
 
     def loadROM(self, rom):
         logger.info("Reading ROM into memory")
         for i in range(len(rom)):
-            self.memory[self.pc+i] = rom[i]
+            self.__memory[self.__pc+i] = rom[i]
 
     def emulateCycle(self):
-        opCodeA = self.memory[self.pc]
-        opCodeB = self.memory[self.pc+1]
-        self.opCode = int(opCodeA) << 8 | int(opCodeB)
+        opCodeA = self.__memory[self.__pc]
+        opCodeB = self.__memory[self.__pc+1]
+        self.__opCode = int(opCodeA) << 8 | int(opCodeB)
 
-        opA = self.opCode & 0xF000
-        opB = (self.opCode & 0x0F00) >> 8
-        opC = (self.opCode & 0x00F0) >> 4
-        opD = self.opCode & 0x000F
+        opA = self.__opCode & 0xF000
+        opB = (self.__opCode & 0x0F00) >> 8
+        opC = (self.__opCode & 0x00F0) >> 4
+        opD = self.__opCode & 0x000F
         if(opA == 0x0000):
-            if(self.opCode & 0x00FF == 0x00EE):
+            if(self.__opCode & 0x00FF == 0x00EE):
                 logger.info("Returning from sub routine")
-                self.ret()
+                self.__ret()
             elif(opC == 0xE):
                 logger.info("Clearing screen")
-                self.clr()
+                self.__clr()
         elif(opA == 0x1000):
-            addr = self.opCode & 0x0FFF
+            addr = self.__opCode & 0x0FFF
             logger.info("Jumping to address: %s"%(hex(addr)))
-            self.jmp(addr)
+            self.__jmp(addr)
         elif(opA == 0x2000):
-            addr = self.opCode & 0x0FFF
+            addr = self.__opCode & 0x0FFF
             logger.info("Calling subroutine at address %s"%(hex(addr)))
-            self.call(addr)
+            self.__call(addr)
         elif(opA == 0x3000):
-            skipped = self.sex(opB, self.opCode&0x00FF)
+            skipped = self.__sex(opB, self.__opCode&0x00FF)
             if(skipped):
                 logger.info("Skipping next instruction")
             else:
                 logger.info("Ignoring Skip")
         elif(opA == 0x4000):
-            const = self.opCode&0x00FF
+            const = self.__opCode&0x00FF
             logger.info("Checking if v[%d] != %d"%(opB,const))
-            skipped = self.sne(opB, const)
+            skipped = self.__sne(opB, const)
             if(skipped):
                 logger.info("Skipping next instruction")
             else:
                 logger.info("Ignoring skip")
         elif(opA == 0x5000):
             logger.info("Checking if %d == %d"%(opB,opC))
-            skipped = self.se(opB, opC)
+            skipped = self.__se(opB, opC)
             if(skipped):
                 logger.info("Skipping next instruction")
             else:
                 logger.info("Ignoring skip")
         elif(opA == 0x6000):
-            const = self.opCode&0x00FF
+            const = self.__opCode&0x00FF
             logger.info("Moving constant %d into register v[%d]"%(const, opB))
-            self.movL(opB, const)
+            self.__movL(opB, const)
         elif(opA == 0x7000):
-            const = self.opCode&0x00FF
+            const = self.__opCode&0x00FF
             logger.info("Adding constant %d to v[%d]"%(const, opB))
-            self.add(opB, const)
+            self.__add(opB, const)
         elif(opA == 0x8000):
             if(opD == 0x0000):
                 logger.info("Loading value from v[%d] into v[%d]"%(opC, opB))
-                self.ldxy(opB, opC)
+                self.__ldxy(opB, opC)
             elif(opD == 0x0001):
                 logger.info("v[%d] = v[%d] | v[%d]"%(opB,opB,opC))
-                self.orx(opB, opC)
+                self.__orx(opB, opC)
             elif(opD == 0x0002):
                 logger.info("v[%d] = v[%d] & v[%d]"%(opB,opB,opC))
-                self.andx(opB, opC)
+                self.__andx(opB, opC)
             elif(opD == 0x0003):
                 logger.info("v[%d] = v[%d] XOR v[%d]"%(opB, opB, opC))
-                self.xor(opB, opC)
+                self.__xor(opB, opC)
             elif(opD == 0x0004):
                 logger.info("Adding registers v[%d] and v[%d] into v[%d]"%(opB, opC, opB))
-                self.addc(opB, opC)
+                self.__addc(opB, opC)
             elif(opD == 0x0005):
                 logger.info("Subtracting v[%d] from v[%d]"%(opC, opB))
-                self.sub(opB, opC)
+                self.__sub(opB, opC)
             elif(opD == 0x0006):
                 logger.info("")
-                self.shr(opB, opC)
+                self.__shr(opB, opC)
             elif(opD == 0x0007):
                 #TODO: Add log
-                self.subn(opB, opC)
+                self.__subn(opB, opC)
             elif(opD == 0x000E):
-                self.shl(opB, opC)
+                self.__shl(opB, opC)
         elif(opA == 0x9000):
-            skipped = self.snel(opB, opC)
+            skipped = self.__snel(opB, opC)
             if(skipped):
                 logger.info("Skipping next instruction")
             else:
                 logger.info("Skip ignored")
 
         elif(opA == 0xA000):
-            const = self.opCode&0x0FFF
+            const = self.__opCode&0x0FFF
             logger.info("Loading constant %d into index register"%(const))
-            self.loadI(const)
+            self.__loadI(const)
 
         elif(opA == 0xD000):
-            self.sprite(opB, opC, opD)
+            self.__sprite(opB, opC, opD)
 
         elif(opA == 0xF000):
-            opCD = self.opCode & 0x00FF
+            opCD = self.__opCode & 0x00FF
             if(opCD == 0x0007):
-                self.loadXDT(opB)
+                self.__loadXDT(opB)
             elif(opCD == 0x0015):
-                self.loadDT(opB)
+                self.__loadDT(opB)
             elif(opCD == 0x0029):
-                logger.info("Setting vI to the address of sprite #" + str(self.v[v]))
-                self.loadFX(opB)
+                logger.info("Setting vI to the address of sprite #" + str(self.__v[v]))
+                self.__loadFX(opB)
             elif(opCD == 0x0033):
-                self.bcd(opB)
+                self.__bcd(opB)
             elif(opCD == 0x0055):
-                self.load0X(opB)
+                self.__load0x(opB)
             elif(opCD == 0x0065):
-                logger.info("Reading register v[0] through v[%d] from memory location %s"%(opB, hex(self.i)))
-                self.loadXI(opB)
-
+                logger.info("Reading register v[0] through v[%d] from memory location %s"%(opB, hex(self.__i)))
+                self.__loadXI(opB)
+        elif(opA == 0xE000):
+            opCD = self.__opCode & 0x00FF
+            if(opCD == 0x009E):
+                self.__skp(opB)
+            elif(opCD == 0x00A1):
+                self.__sknp(opB)
         else:
             self.isRunning = False
-            logger.error("OpCode implementation for %s not found"%(hex(self.opCode)))
+            logger.error("OpCode implementation for %s not found"%(hex(self.__opCode)))
 
 
-        logger.info(self.toString())
-        self.pc += 2
+        logger.info(str(self))
+        self.__pc += 2
 
-        if((self.pc-0x200) % 60 == 0):
-            if(self.dT > 0):
-                self.dT -= 1
-            if(self.sT > 0):
+        if((self.__pc-0x200) % 60 == 0):
+            if(self.__dT > 0):
+                self.__dT -= 1
+            if(self.__sT > 0):
                 logger.info("BEEP")
-                self.sT -= 1
+                self.__sT -= 1
 
-        self.display.update()
+        self.__display.update()
 
-    def ldxy(self, x, y):
-        self.v[x] = self.v[y]
+    def __ldxy(self, x, y):
+        self.__v[x] = self.__v[y]
 
-    def load0X(self, x):
+    def __load0x(self, x):
         for i in range(x+1):
-            self.memory[self.i+i] = self.v[x]
+            self.__memory[self.__i+i] = self.__v[x]
 
-    def andx(self, x, y):
-        self.v[x] = self.v[x] & self.v[y]
+    def __andx(self, x, y):
+        self.__v[x] = self.__v[x] & self.__v[y]
 
-    def orx(self, x, y):
-        self.v[x] = self.v[x] | self.v[y]
+    def __orx(self, x, y):
+        self.__v[x] = self.__v[x] | self.__v[y]
 
-    def xor(self, x, y):
-        self.v[x] = self.v[x] ^ self.v[y]
+    def __xor(self, x, y):
+        self.__v[x] = self.__v[x] ^ self.__v[y]
 
-    def shr(self, x, y):
-        self.v[0xF] = self.v[x] & 0b1
-        self.v[x] = math.floor(self.v[x]/2)
+    def __shr(self, x, y):
+        self.__v[0xF] = self.__v[x] & 0b1
+        self.__v[x] = math.floor(self.__v[x]/2)
 
-    def shl(self, x, y):
-        self.v[0xF] = self.v[x] >> 7
-        self.v[x] *= 2
-    def subn(self, x, y):
-        if(self.v[y] > self.v[x]):
-            self.v[y] -= self.v[x]
-            self.v[0xF] = 1
+    def __shl(self, x, y):
+        logger.debug("self.v[0xF] = self.v[%d] >> 7 = %d"%(x, x>>7))
+        logger.debug("self.v[0]=%d"%(self.__v[0]))
+        self.__v[0xF] = self.__v[x] >> 7
+        self.__v[x] *= 2
+    def __subn(self, x, y):
+        if(self.__v[y] > self.__v[x]):
+            self.__v[y] -= self.__v[x]
+            self.__v[0xF] = 1
         else:
-            self.v[0xF] = 0
+            self.__v[0xF] = 0
 
-    def sub(self, x,y):
-        if(self.v[x] > self.v[y]):
-            self.v[x] -= self.v[y]
-            self.v[0xF] = 1
+    def __sub(self, x,y):
+        if(self.__v[x] > self.__v[y]):
+            self.__v[x] -= self.__v[y]
+            self.__v[0xF] = 1
             return True
         else:
-            self.v[x] = 0xFF + (self.v[x]-self.v[y]) + 1
-            self.v[0xF] = 0
+            self.__v[x] = 0xFF + (self.__v[x]-self.__v[y]) + 1
+            self.__v[0xF] = 0
             return False
 
-    def add(self, v, const):
-        sum = self.v[v]+const
+    def __add(self, v, const):
+        sum = self.__v[v]+const
         print("SUM: %d"%(sum))
         if(sum < 0xFF):
-            self.v[v] = sum
+            self.__v[v] = sum
         else:
-            self.v[v] = sum & 0xFF
+            self.__v[v] = sum & 0xFF
 
-    def addc(self, x, y):
-        sum = self.v[x]+self.v[y]
+    def __addc(self, x, y):
+        sum = self.__v[x]+self.__v[y]
         if(sum < 0xFF):
-            self.v[x] = sum
-            self.v[0xF] = 0
+            self.__v[x] = sum
+            self.__v[0xF] = 0
         else:
-            self.v[x] = sum & 0xFF
-            self.v[0xF] = 1
+            self.__v[x] = sum & 0xFF
+            self.__v[0xF] = 1
 
-        return self.v[0xF]
+        return self.__v[0xF]
 
-    def sne(self, v, x):
-        if(self.v[v] != x):
-            self.pc += 2
+    def __sne(self, v, x):
+        if(self.__v[v] != x):
+            self.__pc += 2
             return True
         else:
             return False
 
-    def se(self, x, y):
-        if(self.v[x] == self.v[y]):
-            self.pc += 2
+    def __se(self, x, y):
+        if(self.__v[x] == self.__v[y]):
+            self.__pc += 2
             return True
         else:
             return False
-    def loadXDT(self, v):
+    def __loadXDT(self, v):
         logger.info("Placing delay timer value into register v[" + str(v) + "]")
-        self.v[v] = self.dT
+        self.__v[v] = self.__dT
 
-    def loadDT(self, v):
+    def __loadDT(self, v):
         logger.info("Setting delay timer to " + str(v))
-        self.dT = self.v[v]
+        self.__dT = self.__v[v]
 
-    def loadFX(self, v):
-        self.i = 0x50 + (self.v[v] * 5)
+    def __loadFX(self, v):
+        self.__i = 0x50 + (self.__v[v] * 5)
 
-    def loadXI(self, x):
+    def __loadXI(self, x):
         for i in range(x+1):
-            self.v[i] = self.memory[self.i+i]
+            self.__v[i] = self.__memory[self.__i+i]
 
-    def jmp(self, x):
-        if(x < len(self.memory) and x > 0):
-            self.pc = x
+    def __jmp(self, x):
+        if(x < len(self.__memory) and x > 0):
+            self.__pc = x
 
-    def sex(self, v, x):
-        if(self.v[v] == x):
-            self.pc += 2
+    def __sex(self, v, x):
+        if(self.__v[v] == x):
+            self.__pc += 2
             return True
         else:
             return False
 
-    def ret(self):
-        self.pc = self.stack.pop()
-        self.sp -= 1
+    def __ret(self):
+        self.__pc = self.__stack.pop()
+        self.__sp -= 1
 
-    def bcd(self, v):
-        value = self.v[v]
-        logger.info("Storing value " + str(value) + " into memory locations{\n" + str(hex(self.i)) + ", " + str(hex(self.i+1)) + ", " + str(hex(self.i+2)))
+    def __bcd(self, v):
+        value = self.__v[v]
+        logger.info("Storing value " + str(value) + " into memory locations{\n" + str(hex(self.__i)) + ", " + str(hex(self.__i+1)) + ", " + str(hex(self.__i+2)))
         ones = value % 10
         tens = (value / 10) % 10
         hundreds = value / 100
-        self.memory[self.i] = math.floor(hundreds)
-        self.memory[self.i+1] = math.floor(tens)
-        self.memory[self.i+2] = math.floor(ones)
+        self.__memory[self.__i] = math.floor(hundreds)
+        self.__memory[self.__i+1] = math.floor(tens)
+        self.__memory[self.__i+2] = math.floor(ones)
 
-    def call(self, addr):
-        self.sp += 1
-        self.stack.append(self.pc)
-        self.pc = addr
+    def __call(self, addr):
+        self.__sp += 1
+        self.__stack.append(self.__pc)
+        self.__pc = addr
 
-    def clr(self):
-        self.display.clear()
+    def __clr(self):
+        self.__display.clear()
 
-    def sprite(self, x, y, n):
-        logger.info("Drawing sprite at %d, %d with a height of %d"%(self.v[x],self.v[y],n))
+    def __sprite(self, x, y, n):
+        logger.info("Drawing sprite at %d, %d with a height of %d"%(self.__v[x],self.__v[y],n))
 
         for i in range(n):
-            byte = [int(a) for a in '{:08b}'.format(self.memory[self.i+i])]
+            byte = [int(a) for a in '{:08b}'.format(self.__memory[self.__i+i])]
             logger.debug("Reading byte #" + str(i) + ":")
             logger.debug(byte)
             for j in range(len(byte)):
                 bit = byte[j]
                 logger.debug("Bit: " + str(bit))
-                row = self.v[y]+i
-                col = self.v[x]+j
+                row = self.__v[y]+i
+                col = self.__v[x]+j
                 if(row > 32):
                     row %= 32
                 if(col > 64):
                     col %= 64
 
-                pixel = self.display.get(row, col)
-                self.display.set(row, col, bit^pixel)
-    def movL(self, v, x):
-        self.v[v] = x
+                pixel = self.__display.get(row, col)
+                self.__display.set(row, col, bit^pixel)
+    def __movL(self, v, x):
+        self.__v[v] = x
 
-    def loadI(self, x):
-        self.i = x
+    def __loadI(self, x):
+        self.__i = x
 
-    def snel(self, x, y):
-        if(self.v[x] != self.v[y]):
-            self.pc += 2
+    def __snel(self, x, y):
+        if(self.__v[x] != self.__v[y]):
+            self.__pc += 2
             return True
         else:
             return False
 
-    def toString(self):
-        out = "Current OpCode:" + str(hex(self.opCode)) + "\n"
-        out += "vR[" + str(self.i) + "]\n"
-        for i in range(len(self.v)):
-            out = out + "v" + str(i) + "[" + str(self.v[i]) + "]\t"
+    def __skp(self, x):
+        # Check if key value x is pressed, if so increase PC by 2
+        return
 
-        out = out + "\n" + "Program Counter: " + str(self.pc) + "\n" + "Stack Pointer: " + str(self.sp) + "\n"
+    def __sknp(self, x):
+        # Check if key value x is NOT pressed, if so increase PC by 2
+        return
+
+    def __str__(self):
+        out = "Current OpCode:" + str(hex(self.__opCode)) + "\n"
+        out += "vR[" + str(self.__i) + "]\n"
+        for i in range(len(self.__v)):
+            out = out + "v" + str(i) + "[" + str(self.__v[i]) + "]\t"
+
+        out = out + "\n" + "Program Counter: " + str(self.__pc) + "\n" + "Stack Pointer: " + str(self.__sp) + "\n"
         return out
+
+    def getClockSpeed(self):
+        return self.__clockSpeed
