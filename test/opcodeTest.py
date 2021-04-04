@@ -29,13 +29,13 @@ class TestOpCodes(unittest.TestCase):
         cpu.jmp(addr)
         self.assertEqual(cpu.pc, prev)
 
-    def test8XY6VFSetOn(self):
+    def test8XY6VFEnabled(self):
         num = 0b10101011
         cpu.v[0] = num
         cpu.shr(0,0)
         self.assertEqual(cpu.v[0xF], 1)
 
-    def test8XY6VFSetOff(self):
+    def test8XY6VFDisabled(self):
         num = 0b10101010
         cpu.v[0] = num
         cpu.shr(0,0)
@@ -70,3 +70,21 @@ class TestOpCodes(unittest.TestCase):
         x1 = cpu.memory[cpu.i+1]
         x2 = cpu.memory[cpu.i+2]
         self.assertEqual(x0*100 + x1*10 + x2, num)
+
+    def test8XYEVFEnabled(self):
+        num = 0b10101011
+        cpu.v[0x0] = num
+        cpu.shl(0x0,0x0)
+        self.assertEqual(cpu.v[0xF],0x1)
+
+    def test8XYEVFDisabled(self):
+        num = 0b00101010
+        cpu.v[0x0] = num
+        cpu.shl(0x0,0x0)
+        self.assertEqual(cpu.v[0xF],0x0)
+
+    def test8XYEMultiplyByTwo(self):
+        num = 0b10101011
+        cpu.v[0x0] = num
+        cpu.shl(0x0,0x0)
+        self.assertEqual(cpu.v[0x0], num*2)
