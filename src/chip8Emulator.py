@@ -17,10 +17,10 @@ class Chip8Emulator:
     def __init__(self):
         self.__title = "Chip-8 Emulator"
         self.__display = display.Display()
-        self.__processor = processor.Processor(self.__display)
+        self.__keyboard == keyboard.Keyboard()
+        self.__processor = processor.Processor(self.__display, self.__keyboard)
         self.__isRunning = False
         self.__debugMode = True
-        #self.__keyboard == keyboard.Keyboard()
         self.__display.setTitle(self.__title)
 
     def run(self, rom):
