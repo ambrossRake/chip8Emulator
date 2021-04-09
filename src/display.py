@@ -10,39 +10,39 @@ import tkinter
 class Display:
 
     def __init__(self):
-        self.pixels = []
-        self.window = tkinter.Tk()
-        self.scale = 16
-        self.width = 64*self.scale
-        self.height = 32*self.scale
-        self.foregroundColor = '#183A37'
-        self.backgroundColor = '#04151F'
-        self.window.geometry = ("%dx%d"%(self.width,self.height))
-        self.window.config(bg=self.backgroundColor)
-        self.canvas = tkinter.Canvas(self.window, bg=self.backgroundColor, height = self.height, width = self.width)
-        self.canvas.pack()
-        for y in range(self.height):
+        self.__pixels = []
+        self.__window = tkinter.Tk()
+        self.__scale = 16
+        self.__width = 64*self.__scale
+        self.__height = 32*self.__scale
+        self.__foregroundColor = '#183A37'
+        self.__backgroundColor = '#04151F'
+        self.__window.geometry = ("%dx%d"%(self.__width,self.__height))
+        self.__window.config(bg=self.__backgroundColor)
+        self.__canvas = tkinter.Canvas(self.__window, bg=self.__backgroundColor, height = self.__height, width = self.__width)
+        self.__canvas.pack()
+        for y in range(self.__height):
             row = []
-            for x in range(self.width):
-                row.append([self.canvas.create_rectangle(x*self.scale,y*self.scale,(x+1)*self.scale,(y+1)*self.scale, width=1, outline='#0f2422'), 0])
-            self.pixels.append(row)
+            for x in range(self.__width):
+                row.append([self.__canvas.create_rectangle(x*self.__scale,y*self.__scale,(x+1)*self.__scale,(y+1)*self.__scale, width=1, outline='#0f2422'), 0])
+            self.__pixels.append(row)
     def setTitle(self, title):
-        self.window.title(title)
+        self.__window.title(title)
     def clear(self):
-        for pixel in self.pixels:
-            self.canvas.delete(pixel[0])
+        for pixel in self.__pixels:
+            self.__canvas.delete(pixel[0])
 
     def set(self, row, col, value):
-        pixel = self.pixels[row][col]
+        pixel = self.__pixels[row][col]
         if(value == 0):
             pixel[1] = 0
-            self.canvas.itemconfig(pixel[0], fill=self.backgroundColor)
+            self.__canvas.itemconfig(pixel[0], fill=self.__backgroundColor)
         else:
-            self.canvas.itemconfig(pixel[0], fill=self.foregroundColor)
-            self.pixels[row][col][1] = 1
+            self.__canvas.itemconfig(pixel[0], fill=self.__foregroundColor)
+            self.__pixels[row][col][1] = 1
 
     def get(self, row, col):
-        return self.pixels[row][col][1]
+        return self.__pixels[row][col][1]
 
     def update(self):
-        self.window.update()
+        self.__window.update()
