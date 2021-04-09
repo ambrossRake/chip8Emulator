@@ -33,7 +33,7 @@ logger.addHandler(handler)
 
 class Processor:
 
-    def __init__(self, display):
+    def __init__(self, display, keyboard):
         self.__memory = []
         self.__v = []
         self.__i = 0x0
@@ -49,6 +49,7 @@ class Processor:
         self.__dT = 0x0
         self.__sT = 0x0
         self.__display = display
+        self.__keyboard = keyboard
         self.__font = [
         0xF0, 0x90, 0x90, 0x90, 0xF0, # 0
         0x20, 0x60, 0x20, 0x20, 0x70, # 1
@@ -199,7 +200,7 @@ class Processor:
             elif(opCD == 0x0015):
                 self.__loadDT(opB)
             elif(opCD == 0x0029):
-                logger.info("Setting vI to the address of sprite #" + str(self.__v[v]))
+                logger.info("Setting vI to the address of sprite #" + str(self.__v[opB]))
                 self.__loadFX(opB)
             elif(opCD == 0x0033):
                 self.__bcd(opB)
@@ -372,6 +373,7 @@ class Processor:
 
                 pixel = self.__display.get(row, col)
                 self.__display.set(row, col, bit^pixel)
+
     def __movL(self, v, x):
         self.__v[v] = x
 
@@ -386,12 +388,12 @@ class Processor:
             return False
 
     def __skp(self, x):
-        # Check if key value x is pressed, if so increase PC by 2
-        return
+        if(self.__keyboard.isKeyDown(x)):
+            self.__pc += 2
 
     def __sknp(self, x):
-        # Check if key value x is NOT pressed, if so increase PC by 2
-        return
+        if(not self.__keyboard.isKeyDown(x)):
+            self.__pc += 2
 
     def __str__(self):
         out = "Current OpCode:" + str(hex(self.__opCode)) + "\n"
@@ -404,3 +406,24 @@ class Processor:
 
     def getClockSpeed(self):
         return self.__clockSpeed
+
+    def setRegister(self, i, v):
+        if(v <= 0xFFFFFFFF):
+            self.__v[i] = v
+
+    def getRegister(self, i):
+        if(i < len(self.__v)):
+            return self.__v[i]
+        return None
+
+    def getRegisters(self):
+        return self.__v
+
+    def getProgramCounter(self):
+        return self.__pc
+
+    def getMemory(self):
+        return self.__memory
+
+    def getIndexRegister(self):
+        return self.__i
